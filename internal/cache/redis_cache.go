@@ -14,6 +14,10 @@ type RedisCache struct {
 	ctx    context.Context
 }
 
+func (c *RedisCache) Client() *redis.Client {
+	return c.client
+}
+
 func NewRedisCache(addr string, password string, db int) *RedisCache {
 
 	rdb := redis.NewClient(&redis.Options{

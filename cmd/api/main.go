@@ -11,6 +11,7 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/circuitbreaker"
 	"github.com/hynek-systems/hynek-poi/internal/config"
 	"github.com/hynek-systems/hynek-poi/internal/domain"
+	"github.com/hynek-systems/hynek-poi/internal/health"
 	"github.com/hynek-systems/hynek-poi/internal/metrics"
 	"github.com/hynek-systems/hynek-poi/internal/orchestrator"
 	"github.com/hynek-systems/hynek-poi/internal/provider"
@@ -81,6 +82,8 @@ func main() {
 		cfg.Redis.DB,
 	)
 
+	healthChecker := health.New(redisCache.Client())
+
 	layeredCache := cache.NewLayeredCache(
 		memoryCache,
 		redisCache,
@@ -93,6 +96,8 @@ func main() {
 	)
 
 	http.HandleFunc("/v1/search", searchHandler)
+	http.HandleFunc("/health", healthChecker.HealthHandler)
+	http.HandleFunc("/ready", healthChecker.ReadyHandler)
 
 	http.Handle("/metrics", promhttp.Handler())
 

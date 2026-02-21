@@ -20,6 +20,12 @@ services:
       REDIS_DB: 0
       CACHE_TTL: 5m
 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
     restart: unless-stopped
 
     networks:
