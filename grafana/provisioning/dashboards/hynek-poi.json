@@ -1,0 +1,88 @@
+{
+    "title": "Hynek POI",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "5s",
+    "panels": [
+        {
+            "type": "timeseries",
+            "title": "Requests/sec",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(hynek_poi_requests_total[1m])",
+                    "legendFormat": "req/sec"
+                }
+            ],
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 12,
+                "h": 8
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Cache Hits/sec",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(hynek_poi_cache_hits_total[1m])",
+                    "legendFormat": "hits/sec"
+                }
+            ],
+            "gridPos": {
+                "x": 12,
+                "y": 0,
+                "w": 12,
+                "h": 8
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Cache Misses/sec",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(hynek_poi_cache_misses_total[1m])",
+                    "legendFormat": "miss/sec"
+                }
+            ],
+            "gridPos": {
+                "x": 0,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            }
+        },
+        {
+            "type": "timeseries",
+            "title": "Request Latency",
+            "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+            },
+            "targets": [
+                {
+                    "expr": "rate(hynek_poi_request_duration_seconds_sum[1m]) / rate(hynek_poi_request_duration_seconds_count[1m])",
+                    "legendFormat": "latency"
+                }
+            ],
+            "gridPos": {
+                "x": 12,
+                "y": 8,
+                "w": 12,
+                "h": 8
+            }
+        }
+    ]
+}

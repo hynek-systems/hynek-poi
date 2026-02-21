@@ -11,13 +11,25 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/circuitbreaker"
 	"github.com/hynek-systems/hynek-poi/internal/config"
 	"github.com/hynek-systems/hynek-poi/internal/domain"
+	"github.com/hynek-systems/hynek-poi/internal/metrics"
 	"github.com/hynek-systems/hynek-poi/internal/orchestrator"
 	"github.com/hynek-systems/hynek-poi/internal/provider"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var orch *orchestrator.CachedOrchestrator
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
+
+	start := time.Now()
+
+	metrics.RequestsTotal.WithLabelValues("/v1/search").Inc()
+
+	defer func() {
+		metrics.RequestDuration.
+			WithLabelValues("/v1/search").
+			Observe(time.Since(start).Seconds())
+	}()
 
 	lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, _ := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
@@ -26,6 +38,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		Latitude:  lat,
 		Longitude: lng,
 		Radius:    1000,
+		Limit:     50,
 	}
 
 	results, err := orch.Search(query)
@@ -41,6 +54,8 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	cfg := config.Load()
+
+	metrics.Register()
 
 	osmProvider := provider.NewOSMProvider()
 
@@ -78,6 +93,8 @@ func main() {
 	)
 
 	http.HandleFunc("/v1/search", searchHandler)
+
+	http.Handle("/metrics", promhttp.Handler())
 
 	addr := ":" + strconv.Itoa(cfg.Server.Port)
 

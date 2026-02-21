@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: Hynek POI
+    folder: Hynek POI
+    type: file
+
+    options:
+      path: /etc/grafana/provisioning/dashboards
