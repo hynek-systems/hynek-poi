@@ -7,23 +7,50 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/config"
 )
 
-func BuildProviders(cfg config.ProvidersConfig) []Provider {
+type RegisteredProvider struct {
+	Provider Provider
+	Priority int
+}
 
-	var providers []Provider
+func BuildProviders(cfg config.ProvidersConfig) []RegisteredProvider {
 
-	if cfg.OSM.Enabled {
+	var result []RegisteredProvider
 
-		osm := NewOSMProvider()
+	// Google
+	if cfg.Google.Enabled {
 
-		cb := circuitbreaker.New(3, 30*time.Second)
+		base := NewGoogleProvider(cfg.Google.ApiKey)
 
-		protected := NewCircuitBreakerProvider(osm, cb)
+		cb := circuitbreaker.New(
+			3,              // failures before open
+			30*time.Second, // reset timeout
+		)
 
-		providers = append(providers, protected)
+		protected := NewCircuitBreakerProvider(base, cb)
+
+		result = append(result, RegisteredProvider{
+			Provider: protected,
+			Priority: cfg.Google.Priority,
+		})
 	}
 
-	// future providers:
-	// if cfg.Google.Enabled { ... }
+	// OSM
+	if cfg.OSM.Enabled {
 
-	return providers
+		base := NewOSMProvider()
+
+		cb := circuitbreaker.New(
+			3,
+			30*time.Second,
+		)
+
+		protected := NewCircuitBreakerProvider(base, cb)
+
+		result = append(result, RegisteredProvider{
+			Provider: protected,
+			Priority: cfg.OSM.Priority,
+		})
+	}
+
+	return result
 }

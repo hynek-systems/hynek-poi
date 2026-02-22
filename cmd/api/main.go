@@ -16,6 +16,7 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/metrics"
 	"github.com/hynek-systems/hynek-poi/internal/orchestrator"
 	"github.com/hynek-systems/hynek-poi/internal/provider"
+	"github.com/hynek-systems/hynek-poi/internal/ranking"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -104,7 +105,20 @@ func main() {
 
 	metrics.Register()
 
-	providers := provider.BuildProviders(cfg.Providers)
+	registered := provider.BuildProviders(cfg.Providers)
+
+	var providers []provider.Provider
+
+	priorities := map[string]int{}
+
+	for _, rp := range registered {
+
+		providers = append(providers, rp.Provider)
+
+		priorities[rp.Provider.Name()] = rp.Priority
+	}
+
+	ranking.SetProviderPriorities(priorities)
 
 	parallel := orchestrator.NewParallel(
 		providers,

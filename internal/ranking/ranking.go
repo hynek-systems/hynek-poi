@@ -6,12 +6,11 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/domain"
 )
 
-var providerPriority = map[string]int{
+var providerPriority = map[string]int{}
 
-	"google":     1,
-	"here":       2,
-	"foursquare": 3,
-	"osm":        10,
+func SetProviderPriorities(priorities map[string]int) {
+
+	providerPriority = priorities
 }
 
 func Rank(pois []domain.POI, query domain.SearchQuery) []domain.POI {
@@ -42,6 +41,7 @@ func Rank(pois []domain.POI, query domain.SearchQuery) []domain.POI {
 func priority(provider string) int {
 
 	if p, ok := providerPriority[provider]; ok {
+
 		return p
 	}
 

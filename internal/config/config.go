@@ -30,14 +30,20 @@ type CacheConfig struct {
 }
 
 type ProvidersConfig struct {
-	OSM    ProviderConfig `mapstructure:"osm"`
-	Google ProviderConfig `mapstructure:"google"`
-	HERE   ProviderConfig `mapstructure:"here"`
+	OSM    ProviderConfig       `mapstructure:"osm"`
+	Google GoogleProviderConfig `mapstructure:"google"`
+	HERE   ProviderConfig       `mapstructure:"here"`
 }
 
 type ProviderConfig struct {
-	Enabled bool `mapstructure:"enabled"`
-	Weight  int  `mapstructure:"weight"`
+	Enabled  bool `mapstructure:"enabled"`
+	Priority int  `mapstructure:"priority"`
+}
+
+type GoogleProviderConfig struct {
+	Enabled  bool   `mapstructure:"enabled"`
+	ApiKey   string `mapstructure:"api_key"`
+	Priority int    `mapstructure:"priority"`
 }
 
 func Load() *Config {
@@ -54,10 +60,12 @@ func Load() *Config {
 	viper.SetDefault("redis.db", 0)
 	viper.SetDefault("providers.osm.enabled", true)
 	viper.SetDefault("providers.osm.weight", 10)
-
-	viper.SetDefault("cache.ttl", "5m")
+	viper.SetDefault("providers.osm.priority", 10)
 	viper.SetDefault("providers.google.enabled", false)
 	viper.SetDefault("providers.google.weight", 10)
+	viper.SetDefault("providers.google.priority", 1)
+
+	viper.SetDefault("cache.ttl", "5m")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
@@ -85,12 +93,13 @@ func Load() *Config {
 
 		Providers: ProvidersConfig{
 			OSM: ProviderConfig{
-				Enabled: viper.GetBool("providers.osm.enabled"),
-				Weight:  viper.GetInt("providers.osm.weight"),
+				Enabled:  viper.GetBool("providers.osm.enabled"),
+				Priority: viper.GetInt("providers.osm.priority"),
 			},
-			Google: ProviderConfig{
-				Enabled: viper.GetBool("providers.google.enabled"),
-				Weight:  viper.GetInt("providers.google.weight"),
+			Google: GoogleProviderConfig{
+				Enabled:  viper.GetBool("providers.google.enabled"),
+				ApiKey:   viper.GetString("providers.google.api_key"),
+				Priority: viper.GetInt("providers.google.priority"),
 			},
 		},
 	}
