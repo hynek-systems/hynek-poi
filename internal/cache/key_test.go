@@ -98,8 +98,9 @@ func TestBuildKey_MultipleCategories(t *testing.T) {
 
 	key := BuildKey(query)
 
-	if !strings.Contains(key, "restaurant,cafe,bar") {
-		t.Errorf("Expected categories in key, got %s", key)
+	// Categories are now sorted alphabetically
+	if !strings.Contains(key, "bar,cafe,restaurant") {
+		t.Errorf("Expected sorted categories in key, got %s", key)
 	}
 }
 
@@ -113,8 +114,92 @@ func TestBuildKey_NoCategories(t *testing.T) {
 
 	key := BuildKey(query)
 
-	// Should still build a valid key
+	// Should still build a valid key with "all" for empty categories
 	if !strings.HasPrefix(key, "poi:") {
 		t.Errorf("Expected valid key even with no categories, got %s", key)
+	}
+	if !strings.Contains(key, "all") {
+		t.Errorf("Expected 'all' for empty categories, got %s", key)
+	}
+}
+
+func TestBuildKey_WithBBox(t *testing.T) {
+	query := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Categories: []string{"restaurant"},
+		BBox: &domain.BBox{
+			MinLat: 59.3000,
+			MinLng: 18.0000,
+			MaxLat: 59.4000,
+			MaxLng: 18.1000,
+		},
+	}
+
+	key := BuildKey(query)
+
+	// Should use BBox instead of geohash
+	if !strings.HasPrefix(key, "poi:") {
+		t.Errorf("Expected valid key, got %s", key)
+	}
+
+	// Should contain BBox coordinates
+	if !strings.Contains(key, "59.3") || !strings.Contains(key, "18.0") {
+		t.Errorf("Expected BBox coordinates in key, got %s", key)
+	}
+}
+
+func TestBuildKey_BBoxVsGeohash(t *testing.T) {
+	query1 := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Categories: []string{"restaurant"},
+	}
+
+	query2 := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Categories: []string{"restaurant"},
+		BBox: &domain.BBox{
+			MinLat: 59.3000,
+			MinLng: 18.0000,
+			MaxLat: 59.4000,
+			MaxLng: 18.1000,
+		},
+	}
+
+	key1 := BuildKey(query1)
+	key2 := BuildKey(query2)
+
+	// Keys should be different - one with geohash, one with BBox
+	if key1 == key2 {
+		t.Error("Expected different keys for geohash vs BBox")
+	}
+}
+
+func TestBuildKey_CategoryNormalization(t *testing.T) {
+	query1 := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Categories: []string{"Restaurant", "CAFE"},
+	}
+
+	query2 := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Categories: []string{"restaurant", "cafe"},
+	}
+
+	key1 := BuildKey(query1)
+	key2 := BuildKey(query2)
+
+	// Keys should be identical - categories normalized to lowercase
+	if key1 != key2 {
+		t.Errorf("Expected identical keys for normalized categories, got %s and %s", key1, key2)
 	}
 }
