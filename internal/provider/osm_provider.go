@@ -71,17 +71,31 @@ func (p *OSMProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
 		amenityFilter = `["amenity"]`
 	}
 
-	overpassQuery := fmt.Sprintf(`
-[out:json][timeout:5];
-node%s(around:%d,%f,%f);
-out body %d;
-`,
-		amenityFilter,
-		query.Radius,
-		query.Latitude,
-		query.Longitude,
-		query.Limit,
-	)
+	var overpassQuery string
+
+	if query.BBox != nil {
+
+		overpassQuery = fmt.Sprintf(
+			`[out:json][timeout:5];node%s(%f,%f,%f,%f);out body %d;`,
+			amenityFilter,
+			query.BBox.MinLat,
+			query.BBox.MinLng,
+			query.BBox.MaxLat,
+			query.BBox.MaxLng,
+			query.Limit,
+		)
+
+	} else {
+
+		overpassQuery = fmt.Sprintf(
+			`[out:json][timeout:5];node%s(around:%d,%f,%f);out body %d;`,
+			amenityFilter,
+			query.Radius,
+			query.Latitude,
+			query.Longitude,
+			query.Limit,
+		)
+	}
 
 	form := url.Values{}
 	form.Add("data", overpassQuery)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -19,6 +20,31 @@ import (
 )
 
 var orch *orchestrator.CachedOrchestrator
+
+func parseBBox(param string) (*domain.BBox, error) {
+
+	if param == "" {
+		return nil, nil
+	}
+
+	parts := strings.Split(param, ",")
+
+	if len(parts) != 4 {
+		return nil, fmt.Errorf("invalid bbox")
+	}
+
+	minLat, _ := strconv.ParseFloat(parts[0], 64)
+	minLng, _ := strconv.ParseFloat(parts[1], 64)
+	maxLat, _ := strconv.ParseFloat(parts[2], 64)
+	maxLng, _ := strconv.ParseFloat(parts[3], 64)
+
+	return &domain.BBox{
+		MinLat: minLat,
+		MinLng: minLng,
+		MaxLat: maxLat,
+		MaxLng: maxLng,
+	}, nil
+}
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -43,9 +69,20 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		categories = strings.Split(categoriesParam, ",")
 	}
 
+	bboxParam := r.URL.Query().Get("bbox")
+
+	bbox, err := parseBBox(bboxParam)
+
+	if err != nil {
+
+		http.Error(w, "invalid bbox", 400)
+		return
+	}
+
 	query := domain.SearchQuery{
 		Latitude:   lat,
 		Longitude:  lng,
+		BBox:       bbox,
 		Radius:     1000,
 		Limit:      50,
 		Categories: categories,

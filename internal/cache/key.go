@@ -13,17 +13,34 @@ const precision = 6
 
 func BuildKey(query domain.SearchQuery) string {
 
-	hash := geohash.EncodeWithPrecision(
-		query.Latitude,
-		query.Longitude,
-		precision,
-	)
-
 	categoryPart := normalizeCategories(query.Categories)
+
+	var bboxPart string
+
+	if query.BBox != nil {
+
+		bboxPart = fmt.Sprintf(
+			"%f:%f:%f:%f",
+			query.BBox.MinLat,
+			query.BBox.MinLng,
+			query.BBox.MaxLat,
+			query.BBox.MaxLng,
+		)
+
+	} else {
+
+		hash := geohash.EncodeWithPrecision(
+			query.Latitude,
+			query.Longitude,
+			precision,
+		)
+
+		bboxPart = hash
+	}
 
 	return fmt.Sprintf(
 		"poi:%s:%d:%s",
-		hash,
+		bboxPart,
 		query.Radius,
 		categoryPart,
 	)
