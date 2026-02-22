@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hynek-systems/hynek-poi/internal/cache"
-	"github.com/hynek-systems/hynek-poi/internal/circuitbreaker"
 	"github.com/hynek-systems/hynek-poi/internal/config"
 	"github.com/hynek-systems/hynek-poi/internal/domain"
 	"github.com/hynek-systems/hynek-poi/internal/health"
@@ -58,21 +57,12 @@ func main() {
 
 	metrics.Register()
 
-	osmProvider := provider.NewOSMProvider()
+	providers := provider.BuildProviders(cfg.Providers)
 
-	cb := circuitbreaker.New(3, 30*time.Second)
-
-	protectedProvider := provider.NewCircuitBreakerProvider(
-		osmProvider,
-		cb,
+	parallel := orchestrator.NewParallel(
+		providers,
+		3*time.Second,
 	)
-
-	weighted := orchestrator.NewWeighted([]orchestrator.ProviderConfig{
-		{
-			Provider: protectedProvider,
-			Weight:   10,
-		},
-	})
 
 	memoryCache := cache.NewMemoryCache()
 
@@ -90,7 +80,7 @@ func main() {
 	)
 
 	orch = orchestrator.NewCached(
-		weighted,
+		parallel,
 		layeredCache,
 		cfg.Cache.TTL,
 	)

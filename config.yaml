@@ -8,3 +8,12 @@ redis:
 
 cache:
   ttl: 5m
+
+providers:
+  osm:
+    enabled: true
+    weight: 10
+
+  google:
+    enabled: false
+    weight: 10
