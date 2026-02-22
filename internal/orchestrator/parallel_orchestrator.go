@@ -9,6 +9,7 @@ import (
 	"github.com/hynek-systems/hynek-poi/internal/dedupe"
 	"github.com/hynek-systems/hynek-poi/internal/domain"
 	"github.com/hynek-systems/hynek-poi/internal/provider"
+	"github.com/hynek-systems/hynek-poi/internal/ranking"
 )
 
 type ParallelOrchestrator struct {
@@ -81,7 +82,11 @@ func (o *ParallelOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 					return nil, errors.New("all providers failed or timeout")
 				}
 
-				return dedupe.Deduplicate(all), nil
+				deduped := dedupe.Deduplicate(all)
+
+				ranked := ranking.Rank(deduped, query)
+
+				return ranked, nil
 			}
 
 			all = append(all, results...)
@@ -92,7 +97,11 @@ func (o *ParallelOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 				return nil, errors.New("all providers failed or timeout")
 			}
 
-			return dedupe.Deduplicate(all), nil
+			deduped := dedupe.Deduplicate(all)
+
+			ranked := ranking.Rank(deduped, query)
+
+			return ranked, nil
 		}
 	}
 }

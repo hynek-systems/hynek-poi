@@ -13,7 +13,9 @@ providers:
   osm:
     enabled: true
     weight: 10
+    priority: 10
 
   google:
     enabled: false
     weight: 10
+    priority: 1
