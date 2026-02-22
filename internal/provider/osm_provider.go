@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/hynek-systems/hynek-poi/internal/domain"
@@ -41,14 +42,45 @@ type overpassElement struct {
 
 func (p *OSMProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
 
+	amenityFilter := ""
+
+	if len(query.Categories) > 0 {
+
+		var mapped []string
+
+		for _, cat := range query.Categories {
+
+			if amenity, ok := mapCategory(cat); ok {
+				mapped = append(mapped, amenity)
+			}
+		}
+
+		if len(mapped) > 0 {
+
+			regex := strings.Join(mapped, "|")
+
+			amenityFilter = fmt.Sprintf(`["amenity"~"%s"]`, regex)
+
+		} else {
+
+			amenityFilter = `["amenity"]`
+		}
+
+	} else {
+
+		amenityFilter = `["amenity"]`
+	}
+
 	overpassQuery := fmt.Sprintf(`
-[out:json][timeout:10];
-node["amenity"](around:%d,%f,%f);
-out;
+[out:json][timeout:5];
+node%s(around:%d,%f,%f);
+out body %d;
 `,
+		amenityFilter,
 		query.Radius,
 		query.Latitude,
 		query.Longitude,
+		query.Limit,
 	)
 
 	form := url.Values{}

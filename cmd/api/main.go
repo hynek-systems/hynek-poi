@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hynek-systems/hynek-poi/internal/cache"
@@ -34,11 +35,20 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, _ := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
 
+	categoriesParam := r.URL.Query().Get("categories")
+
+	var categories []string
+
+	if categoriesParam != "" {
+		categories = strings.Split(categoriesParam, ",")
+	}
+
 	query := domain.SearchQuery{
-		Latitude:  lat,
-		Longitude: lng,
-		Radius:    1000,
-		Limit:     50,
+		Latitude:   lat,
+		Longitude:  lng,
+		Radius:     1000,
+		Limit:      50,
+		Categories: categories,
 	}
 
 	results, err := orch.Search(query)

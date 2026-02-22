@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hynek-systems/hynek-poi/internal/dedupe"
 	"github.com/hynek-systems/hynek-poi/internal/domain"
 	"github.com/hynek-systems/hynek-poi/internal/provider"
 )
@@ -31,10 +32,9 @@ func (o *ParallelOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 	ctx, cancel := context.WithTimeout(context.Background(), o.timeout)
 	defer cancel()
 
-	resultChan := make(chan []domain.POI, 1)
-	errorChan := make(chan error, len(o.providers))
-
 	var wg sync.WaitGroup
+
+	resultsChan := make(chan []domain.POI, len(o.providers))
 
 	for _, p := range o.providers {
 
@@ -46,39 +46,53 @@ func (o *ParallelOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 
 			results, err := provider.Search(query)
 
-			if err != nil {
-				errorChan <- err
+			if err != nil || len(results) == 0 {
 				return
 			}
 
-			if len(results) > 0 {
+			select {
 
-				select {
+			case resultsChan <- results:
 
-				case resultChan <- results:
-					cancel()
-
-				case <-ctx.Done():
-				}
+			case <-ctx.Done():
+				return
 			}
 
 		}(p)
 	}
 
+	// close channel when all providers finished
 	go func() {
 		wg.Wait()
-		close(resultChan)
-		close(errorChan)
+		close(resultsChan)
 	}()
 
-	select {
+	var all []domain.POI
 
-	case results := <-resultChan:
-		return results, nil
+	for {
 
-	case <-ctx.Done():
-		return nil, errors.New("all providers failed or timeout")
+		select {
+
+		case results, ok := <-resultsChan:
+
+			if !ok {
+
+				if len(all) == 0 {
+					return nil, errors.New("all providers failed or timeout")
+				}
+
+				return dedupe.Deduplicate(all), nil
+			}
+
+			all = append(all, results...)
+
+		case <-ctx.Done():
+
+			if len(all) == 0 {
+				return nil, errors.New("all providers failed or timeout")
+			}
+
+			return dedupe.Deduplicate(all), nil
+		}
 	}
 }
-
-var _ Orchestrator = (*ParallelOrchestrator)(nil)
