@@ -14,9 +14,13 @@ providers:
     enabled: true
     weight: 10
     priority: 10
+    timeout: 2s
+    retries: 2
 
   google:
     enabled: false
     api_key: AIzaSyDA7JKapTieeSD7KUFFBfJG-rdvvR4_6yw
     weight: 10
     priority: 1
+    timeout: 2s
+    retries: 2

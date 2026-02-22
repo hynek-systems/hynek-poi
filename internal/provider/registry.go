@@ -21,12 +21,25 @@ func BuildProviders(cfg config.ProvidersConfig) []RegisteredProvider {
 
 		base := NewGoogleProvider(cfg.Google.ApiKey)
 
-		cb := circuitbreaker.New(
-			3,              // failures before open
-			30*time.Second, // reset timeout
+		// timeout
+		withTimeout := NewTimeoutProvider(
+			base,
+			cfg.Google.Timeout,
 		)
 
-		protected := NewCircuitBreakerProvider(base, cb)
+		// retry
+		withRetry := NewRetryProvider(
+			withTimeout,
+			cfg.Google.Retries,
+		)
+
+		// circuit breaker
+		cb := circuitbreaker.New(3, 30*time.Second)
+
+		protected := NewCircuitBreakerProvider(
+			withRetry,
+			cb,
+		)
 
 		result = append(result, RegisteredProvider{
 			Provider: protected,
@@ -44,7 +57,22 @@ func BuildProviders(cfg config.ProvidersConfig) []RegisteredProvider {
 			30*time.Second,
 		)
 
-		protected := NewCircuitBreakerProvider(base, cb)
+		withTimeout := NewTimeoutProvider(
+			base,
+			cfg.Google.Timeout,
+		)
+
+		// retry
+		withRetry := NewRetryProvider(
+			withTimeout,
+			cfg.Google.Retries,
+		)
+
+		// circuit breaker
+		protected := NewCircuitBreakerProvider(
+			withRetry,
+			cb,
+		)
 
 		result = append(result, RegisteredProvider{
 			Provider: protected,

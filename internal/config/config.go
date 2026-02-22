@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -36,20 +37,25 @@ type ProvidersConfig struct {
 }
 
 type ProviderConfig struct {
-	Enabled  bool `mapstructure:"enabled"`
-	Priority int  `mapstructure:"priority"`
+	Enabled  bool          `mapstructure:"enabled"`
+	Priority int           `mapstructure:"priority"`
+	Timeout  time.Duration `mapstructure:"timeout"`
+	Retries  int           `mapstructure:"retries"`
 }
 
 type GoogleProviderConfig struct {
-	Enabled  bool   `mapstructure:"enabled"`
-	ApiKey   string `mapstructure:"api_key"`
-	Priority int    `mapstructure:"priority"`
+	Enabled  bool          `mapstructure:"enabled"`
+	ApiKey   string        `mapstructure:"api_key"`
+	Priority int           `mapstructure:"priority"`
+	Timeout  time.Duration `mapstructure:"timeout"`
+	Retries  int           `mapstructure:"retries"`
 }
 
 func Load() *Config {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
+	viper.SetConfigFile(os.Getenv("HYNEK_POI_CONFIG_FILE"))
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("./config")
 
@@ -61,11 +67,17 @@ func Load() *Config {
 	viper.SetDefault("providers.osm.enabled", true)
 	viper.SetDefault("providers.osm.weight", 10)
 	viper.SetDefault("providers.osm.priority", 10)
+	viper.SetDefault("providers.osm.timeout", "5s")
+	viper.SetDefault("providers.osm.retries", 1)
 	viper.SetDefault("providers.google.enabled", false)
 	viper.SetDefault("providers.google.weight", 10)
 	viper.SetDefault("providers.google.priority", 1)
+	viper.SetDefault("providers.google.timeout", "2s")
+	viper.SetDefault("providers.google.retries", 2)
 
 	viper.SetDefault("cache.ttl", "5m")
+
+	viper.SetEnvPrefix("HYNEK_POI")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
