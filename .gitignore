@@ -48,7 +48,6 @@ temp/
 # Config overrides
 # =========================
 
-config.yaml
 config.local.yaml
 config.dev.yaml
 config.override.yaml

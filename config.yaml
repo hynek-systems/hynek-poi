@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+cache:
+  ttl: 5m
+
+providers:
+  osm:
+    enabled: true
+    weight: 10
+    priority: 10
+    timeout: 2s
+    retries: 2
+
+  google:
+    enabled: false
+    api_key:
+    weight: 10
+    priority: 1
+    timeout: 2s
+    retries: 2
