@@ -19,7 +19,7 @@ providers:
 
   google:
     enabled: false
-    api_key: AIzaSyDA7JKapTieeSD7KUFFBfJG-rdvvR4_6yw
+    api_key:
     weight: 10
     priority: 1
     timeout: 2s
