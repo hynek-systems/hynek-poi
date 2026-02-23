@@ -96,7 +96,10 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(results)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(results); err != nil {
+		http.Error(w, err.Error(), 500)
+	}
 }
 
 func main() {

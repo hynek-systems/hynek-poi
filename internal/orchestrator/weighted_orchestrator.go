@@ -48,7 +48,7 @@ func (o *WeightedOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 
 func (o *WeightedOrchestrator) weightedShuffle() []ProviderConfig {
 
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	var shuffled []ProviderConfig
 
@@ -59,7 +59,7 @@ func (o *WeightedOrchestrator) weightedShuffle() []ProviderConfig {
 		}
 	}
 
-	rand.Shuffle(len(shuffled), func(i, j int) {
+	rng.Shuffle(len(shuffled), func(i, j int) {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	})
 

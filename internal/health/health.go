@@ -22,7 +22,7 @@ func New(redis *redis.Client) *Checker {
 func (c *Checker) HealthHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // Readiness probe
@@ -39,5 +39,5 @@ func (c *Checker) ReadyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("READY"))
+	_, _ = w.Write([]byte("READY"))
 }
