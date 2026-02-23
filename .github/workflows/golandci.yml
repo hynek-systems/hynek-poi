@@ -1,0 +1,98 @@
+run:
+  timeout: 5m
+  tests: true
+
+skip-dirs:
+  - vendor
+  - tmp
+  - build
+  - dist
+
+skip-files:
+  - ".*\\.pb\\.go$"
+
+linters:
+  enable:
+    # correctness
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - ineffassign
+
+    # bugs / dangerous patterns
+    - bodyclose
+    - contextcheck
+    - errorlint
+
+    # performance
+    - prealloc
+
+    # style
+    - revive
+    - gofmt
+    - goimports
+
+    # concurrency
+    - gosimple
+
+    # maintainability
+    - gocyclo
+    - dupl
+
+    # safety
+    - asciicheck
+
+  disable:
+    - exhaustive
+    - exhaustruct
+    - nlreturn
+    - wsl
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+
+  revive:
+    rules:
+      - name: var-naming
+        arguments:
+          - ["ID"]
+          - ["VM"]
+
+      - name: exported
+        disabled: false
+
+      - name: package-comments
+        disabled: false
+
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/hynek-systems/hynek-poi
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
+
+  exclude-rules:
+    - path: _test\\.go
+      linters:
+        - errcheck
+        - gocyclo
+        - dupl
+
+    - path: internal/provider/
+      linters:
+        - dupl
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
