@@ -59,13 +59,13 @@ func BuildProviders(cfg config.ProvidersConfig) []RegisteredProvider {
 
 		withTimeout := NewTimeoutProvider(
 			base,
-			cfg.Google.Timeout,
+			cfg.OSM.Timeout,
 		)
 
 		// retry
 		withRetry := NewRetryProvider(
 			withTimeout,
-			cfg.Google.Retries,
+			cfg.OSM.Retries,
 		)
 
 		// circuit breaker

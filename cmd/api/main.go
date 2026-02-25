@@ -22,6 +22,34 @@ import (
 
 var orch *orchestrator.CachedOrchestrator
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		// Allow any origin
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Only allow GET
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+
+		// Allow headers needed for GET
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Handle preflight request
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// Reject anything that isn't GET
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func parseBBox(param string) (*domain.BBox, error) {
 
 	if param == "" {
@@ -149,15 +177,17 @@ func main() {
 		cfg.Cache.TTL,
 	)
 
-	http.HandleFunc("/v1/search", searchHandler)
-	http.HandleFunc("/health", healthChecker.HealthHandler)
-	http.HandleFunc("/ready", healthChecker.ReadyHandler)
+	mux := http.NewServeMux()
 
-	http.Handle("/metrics", promhttp.Handler())
+	mux.HandleFunc("/v1/search", searchHandler)
+	mux.HandleFunc("/health", healthChecker.HealthHandler)
+	mux.HandleFunc("/ready", healthChecker.ReadyHandler)
+
+	mux.Handle("/metrics", promhttp.Handler())
 
 	addr := ":" + strconv.Itoa(cfg.Server.Port)
 
 	log.Println("Hynek POI listening on", addr)
 
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Fatal(http.ListenAndServe(addr, corsMiddleware(mux)))
 }

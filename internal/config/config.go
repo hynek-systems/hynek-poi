@@ -107,11 +107,15 @@ func Load() *Config {
 			OSM: ProviderConfig{
 				Enabled:  viper.GetBool("providers.osm.enabled"),
 				Priority: viper.GetInt("providers.osm.priority"),
+				Timeout:  viper.GetDuration("providers.osm.timeout"),
+				Retries:  viper.GetInt("providers.osm.retries"),
 			},
 			Google: GoogleProviderConfig{
 				Enabled:  viper.GetBool("providers.google.enabled"),
 				ApiKey:   viper.GetString("providers.google.api_key"),
 				Priority: viper.GetInt("providers.google.priority"),
+				Timeout:  viper.GetDuration("providers.google.timeout"),
+				Retries:  viper.GetInt("providers.google.retries"),
 			},
 		},
 	}
