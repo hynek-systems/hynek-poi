@@ -13,15 +13,15 @@ GO=go
 
 .PHONY: build
 build:
-$(GO) build -o $(APP_NAME) ./cmd/api
+	$(GO) build -o $(APP_NAME) ./cmd/api
 
 .PHONY: run
 run:
-$(GO) run cmd/api/main.go
+	$(GO) run cmd/api/main.go
 
 .PHONY: clean
 clean:
-rm -f $(APP_NAME)
+	rm -f $(APP_NAME)
 
 # =========================
 
@@ -31,16 +31,16 @@ rm -f $(APP_NAME)
 
 .PHONY: test
 test:
-$(GO) test ./...
+	$(GO) test ./...
 
 .PHONY: test-race
 test-race:
-$(GO) test -race ./...
+	$(GO) test -race ./...
 
 .PHONY: test-cover
 test-cover:
-$(GO) test -coverprofile=coverage.out ./...
-$(GO) tool cover -html=coverage.out
+	$(GO) test -coverprofile=coverage.out ./...
+	$(GO) tool cover -html=coverage.out
 
 # =========================
 
@@ -50,15 +50,15 @@ $(GO) tool cover -html=coverage.out
 
 .PHONY: lint
 lint:
-golangci-lint run
+	golangci-lint run
 
 .PHONY: fmt
 fmt:
-$(GO) fmt ./...
+	$(GO) fmt ./...
 
 .PHONY: vet
 vet:
-$(GO) vet ./...
+	$(GO) vet ./...
 
 # =========================
 
@@ -68,11 +68,11 @@ $(GO) vet ./...
 
 .PHONY: deps
 deps:
-$(GO) mod download
+	$(GO) mod download
 
 .PHONY: tidy
 tidy:
-$(GO) mod tidy
+	$(GO) mod tidy
 
 # =========================
 
@@ -82,23 +82,23 @@ $(GO) mod tidy
 
 .PHONY: docker-build
 docker-build:
-docker build -t $(DOCKER_IMAGE):local .
+	docker build -t $(DOCKER_IMAGE):local .
 
 .PHONY: docker-run
 docker-run:
-docker run -p 8080:8080 $(DOCKER_IMAGE):local
+	docker run -p 8080:8080 $(DOCKER_IMAGE):local
 
 .PHONY: docker-compose-up
 docker-compose-up:
-docker compose up -d
+	docker compose up -d
 
 .PHONY: docker-compose-down
 docker-compose-down:
-docker compose down
+	docker compose down
 
 .PHONY: docker-compose-logs
 docker-compose-logs:
-docker compose logs -f
+	docker compose logs -f
 
 # =========================
 
@@ -108,7 +108,7 @@ docker compose logs -f
 
 .PHONY: redis-flush
 redis-flush:
-docker compose exec redis redis-cli flushall
+	docker compose exec redis redis-cli flushall
 
 # =========================
 
@@ -137,10 +137,10 @@ ci: deps fmt vet lint test-race build
 .PHONY: release
 release:
 ifndef VERSION
-$(error VERSION is required, usage: make release VERSION=v0.1.0)
+	$(error VERSION is required, usage: make release VERSION=v0.1.0)
 endif
-git tag $(VERSION)
-git push origin $(VERSION)
+	git tag $(VERSION)
+	git push origin $(VERSION)
 
 # =========================
 
@@ -150,26 +150,26 @@ git push origin $(VERSION)
 
 .PHONY: help
 help:
-@echo ""
-@echo "Hynek POI Makefile"
-@echo ""
-@echo "Build:"
-@echo "  make build"
-@echo "  make run"
-@echo ""
-@echo "Testing:"
-@echo "  make test"
-@echo "  make test-race"
-@echo "  make test-cover"
-@echo ""
-@echo "Lint:"
-@echo "  make lint"
-@echo "  make fmt"
-@echo ""
-@echo "Docker:"
-@echo "  make docker-build"
-@echo "  make docker-compose-up"
-@echo ""
-@echo "CI:"
-@echo "  make ci"
-@echo ""
+	@echo ""
+	@echo "Hynek POI Makefile"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build"
+	@echo "  make run"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test"
+	@echo "  make test-race"
+	@echo "  make test-cover"
+	@echo ""
+	@echo "Lint:"
+	@echo "  make lint"
+	@echo "  make fmt"
+	@echo ""
+	@echo "Docker:"
+	@echo "  make docker-build"
+	@echo "  make docker-compose-up"
+	@echo ""
+	@echo "CI:"
+	@echo "  make ci"
+	@echo ""
