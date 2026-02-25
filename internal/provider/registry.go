@@ -80,5 +80,33 @@ func BuildProviders(cfg config.ProvidersConfig) []RegisteredProvider {
 		})
 	}
 
+	// Foursquare
+	if cfg.Foursquare.Enabled {
+
+		base := NewFoursquareProvider(cfg.Foursquare.ApiKey)
+
+		withTimeout := NewTimeoutProvider(
+			base,
+			cfg.Foursquare.Timeout,
+		)
+
+		withRetry := NewRetryProvider(
+			withTimeout,
+			cfg.Foursquare.Retries,
+		)
+
+		cb := circuitbreaker.New(3, 30*time.Second)
+
+		protected := NewCircuitBreakerProvider(
+			withRetry,
+			cb,
+		)
+
+		result = append(result, RegisteredProvider{
+			Provider: protected,
+			Priority: cfg.Foursquare.Priority,
+		})
+	}
+
 	return result
 }

@@ -24,3 +24,11 @@ providers:
     priority: 1
     timeout: 2s
     retries: 2
+
+  foursquare:
+    enabled: false
+    api_key:
+    weight: 10
+    priority: 5
+    timeout: 3s
+    retries: 2

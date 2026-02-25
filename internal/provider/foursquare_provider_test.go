@@ -1,0 +1,252 @@
+package provider
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/hynek-systems/hynek-poi/internal/domain"
+)
+
+func TestFoursquareProvider_Name(t *testing.T) {
+
+	p := NewFoursquareProvider("test-key")
+
+	if p.Name() != "foursquare" {
+		t.Errorf("Expected name 'foursquare', got '%s'", p.Name())
+	}
+}
+
+func TestFoursquareProvider_Search(t *testing.T) {
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Header.Get("Authorization") != "test-key" {
+			t.Errorf("Expected Authorization header 'test-key', got '%s'", r.Header.Get("Authorization"))
+		}
+
+		if r.Header.Get("Accept") != "application/json" {
+			t.Errorf("Expected Accept header 'application/json', got '%s'", r.Header.Get("Accept"))
+		}
+
+		resp := foursquareResponse{
+			Results: []foursquarePlace{
+				{
+					FsqID: "abc123",
+					Name:  "Test Restaurant",
+					Categories: []foursquareCategory{
+						{ID: 13065, Name: "Restaurant"},
+					},
+					Geocodes: foursquareGeocodes{
+						Main: foursquareLatLng{
+							Latitude:  59.3293,
+							Longitude: 18.0686,
+						},
+					},
+				},
+				{
+					FsqID: "def456",
+					Name:  "Test Cafe",
+					Categories: []foursquareCategory{
+						{ID: 13032, Name: "Cafe"},
+					},
+					Geocodes: foursquareGeocodes{
+						Main: foursquareLatLng{
+							Latitude:  59.3300,
+							Longitude: 18.0700,
+						},
+					},
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+
+	defer server.Close()
+
+	p := NewFoursquareProvider("test-key")
+	p.endpoint = server.URL
+
+	query := domain.SearchQuery{
+		Latitude:   59.3293,
+		Longitude:  18.0686,
+		Radius:     1000,
+		Limit:      50,
+		Categories: []string{"restaurant"},
+	}
+
+	results, err := p.Search(query)
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results, got %d", len(results))
+	}
+
+	if results[0].ID != "abc123" {
+		t.Errorf("Expected ID 'abc123', got '%s'", results[0].ID)
+	}
+
+	if results[0].Name != "Test Restaurant" {
+		t.Errorf("Expected name 'Test Restaurant', got '%s'", results[0].Name)
+	}
+
+	if results[0].Category != "Restaurant" {
+		t.Errorf("Expected category 'Restaurant', got '%s'", results[0].Category)
+	}
+
+	if results[0].Source != "foursquare" {
+		t.Errorf("Expected source 'foursquare', got '%s'", results[0].Source)
+	}
+
+	if results[0].Latitude != 59.3293 {
+		t.Errorf("Expected latitude 59.3293, got %f", results[0].Latitude)
+	}
+
+	if results[1].ID != "def456" {
+		t.Errorf("Expected ID 'def456', got '%s'", results[1].ID)
+	}
+}
+
+func TestFoursquareProvider_SearchEmptyResults(t *testing.T) {
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		resp := foursquareResponse{
+			Results: []foursquarePlace{},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+
+	defer server.Close()
+
+	p := NewFoursquareProvider("test-key")
+	p.endpoint = server.URL
+
+	results, err := p.Search(domain.SearchQuery{
+		Latitude:  59.3293,
+		Longitude: 18.0686,
+		Radius:    1000,
+		Limit:     50,
+	})
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if len(results) != 0 {
+		t.Errorf("Expected 0 results, got %d", len(results))
+	}
+}
+
+func TestFoursquareProvider_SearchNonOKStatus(t *testing.T) {
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+
+	defer server.Close()
+
+	p := NewFoursquareProvider("bad-key")
+	p.endpoint = server.URL
+
+	_, err := p.Search(domain.SearchQuery{
+		Latitude:  59.3293,
+		Longitude: 18.0686,
+	})
+
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	expected := "foursquare status 401"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error '%s', got '%s'", expected, err.Error())
+	}
+}
+
+func TestFoursquareProvider_SearchNoCategories(t *testing.T) {
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		resp := foursquareResponse{
+			Results: []foursquarePlace{
+				{
+					FsqID:      "xyz789",
+					Name:       "Unknown Place",
+					Categories: []foursquareCategory{},
+					Geocodes: foursquareGeocodes{
+						Main: foursquareLatLng{
+							Latitude:  59.3293,
+							Longitude: 18.0686,
+						},
+					},
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+
+	defer server.Close()
+
+	p := NewFoursquareProvider("test-key")
+	p.endpoint = server.URL
+
+	results, err := p.Search(domain.SearchQuery{
+		Latitude:  59.3293,
+		Longitude: 18.0686,
+		Radius:    1000,
+		Limit:     50,
+	})
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(results))
+	}
+
+	if results[0].Category != "" {
+		t.Errorf("Expected empty category, got '%s'", results[0].Category)
+	}
+}
+
+func TestMapFoursquareCategory(t *testing.T) {
+
+	tests := []struct {
+		input    string
+		expected int
+		found    bool
+	}{
+		{"restaurant", 13065, true},
+		{"cafe", 13032, true},
+		{"bar", 13003, true},
+		{"hotel", 19014, true},
+		{"Restaurant", 13065, true},
+		{"unknown", 0, false},
+	}
+
+	for _, tt := range tests {
+
+		id, ok := mapFoursquareCategory(tt.input)
+
+		if ok != tt.found {
+			t.Errorf("mapFoursquareCategory(%q) found = %v, want %v", tt.input, ok, tt.found)
+		}
+
+		if id != tt.expected {
+			t.Errorf("mapFoursquareCategory(%q) = %d, want %d", tt.input, id, tt.expected)
+		}
+	}
+}
