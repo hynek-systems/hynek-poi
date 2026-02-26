@@ -25,6 +25,9 @@ func (p *MockProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
 			OpeningHours: []string{"Mon-Sun 10:00-22:00"},
 			Cuisine:      "Swedish",
 			PriceLevel:   2,
+			Address:      "Storgatan 1, Stockholm",
+			Description:  "A mock test restaurant",
+			Email:        "info@example.com",
 		},
 	}
 

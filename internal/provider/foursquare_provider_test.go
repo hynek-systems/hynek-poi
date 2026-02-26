@@ -51,8 +51,16 @@ func TestFoursquareProvider_Search(t *testing.T) {
 					Menu:    "https://testrestaurant.se/menu",
 					Hours: &foursquareHours{
 						Display: "Mon-Fri 11:00-22:00",
+						OpenNow: true,
 					},
 					Tastes: []string{"Swedish", "Seafood"},
+					Location: &foursquareLocation{
+						FormattedAddress: "Storgatan 1, 111 23 Stockholm",
+					},
+					Description: "A cozy Swedish restaurant",
+					Email:       "info@testrestaurant.se",
+					Verified:    boolPtr(true),
+					Popularity:  0.85,
 				},
 				{
 					FsqID: "def456",
@@ -145,6 +153,30 @@ func TestFoursquareProvider_Search(t *testing.T) {
 
 	if results[0].Cuisine != "Swedish, Seafood" {
 		t.Errorf("Expected cuisine 'Swedish, Seafood', got '%s'", results[0].Cuisine)
+	}
+
+	if results[0].Address != "Storgatan 1, 111 23 Stockholm" {
+		t.Errorf("Expected address 'Storgatan 1, 111 23 Stockholm', got '%s'", results[0].Address)
+	}
+
+	if results[0].Description != "A cozy Swedish restaurant" {
+		t.Errorf("Expected description 'A cozy Swedish restaurant', got '%s'", results[0].Description)
+	}
+
+	if results[0].Email != "info@testrestaurant.se" {
+		t.Errorf("Expected email 'info@testrestaurant.se', got '%s'", results[0].Email)
+	}
+
+	if results[0].OpenNow == nil || !*results[0].OpenNow {
+		t.Errorf("Expected open_now true, got %v", results[0].OpenNow)
+	}
+
+	if results[0].Verified == nil || !*results[0].Verified {
+		t.Errorf("Expected verified true, got %v", results[0].Verified)
+	}
+
+	if results[0].Popularity != 0.85 {
+		t.Errorf("Expected popularity 0.85, got %f", results[0].Popularity)
 	}
 
 	if results[1].ID != "def456" {
@@ -272,6 +304,10 @@ func TestFoursquareProvider_SearchNoCategories(t *testing.T) {
 	if results[0].Category != "" {
 		t.Errorf("Expected empty category, got '%s'", results[0].Category)
 	}
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 func TestMapFoursquareCategory(t *testing.T) {

@@ -37,21 +37,36 @@ type foursquareResponse struct {
 }
 
 type foursquarePlace struct {
-	FsqID      string               `json:"fsq_id"`
-	Name       string               `json:"name"`
-	Categories []foursquareCategory `json:"categories"`
-	Geocodes   foursquareGeocodes   `json:"geocodes"`
-	Rating     float64              `json:"rating"`
-	Price      int                  `json:"price"`
-	Tel        string               `json:"tel"`
-	Website    string               `json:"website"`
-	Menu       string               `json:"menu"`
-	Hours      *foursquareHours     `json:"hours"`
-	Tastes     []string             `json:"tastes"`
+	FsqID       string               `json:"fsq_id"`
+	Name        string               `json:"name"`
+	Categories  []foursquareCategory `json:"categories"`
+	Geocodes    foursquareGeocodes   `json:"geocodes"`
+	Rating      float64              `json:"rating"`
+	Price       int                  `json:"price"`
+	Tel         string               `json:"tel"`
+	Website     string               `json:"website"`
+	Menu        string               `json:"menu"`
+	Hours       *foursquareHours     `json:"hours"`
+	Tastes      []string             `json:"tastes"`
+	Location    *foursquareLocation  `json:"location"`
+	Description string               `json:"description"`
+	Email       string               `json:"email"`
+	Verified    *bool                `json:"verified"`
+	Popularity  float64              `json:"popularity"`
+}
+
+type foursquareLocation struct {
+	Address          string `json:"address"`
+	Locality         string `json:"locality"`
+	Region           string `json:"region"`
+	Postcode         string `json:"postcode"`
+	Country          string `json:"country"`
+	FormattedAddress string `json:"formatted_address"`
 }
 
 type foursquareHours struct {
 	Display string                  `json:"display"`
+	OpenNow bool                    `json:"open_now"`
 	Regular []foursquareHoursEntry  `json:"regular"`
 }
 
@@ -114,7 +129,7 @@ func (p *FoursquareProvider) Search(query domain.SearchQuery) ([]domain.POI, err
 		}
 	}
 
-	params.Set("fields", "fsq_id,name,categories,geocodes,rating,price,tel,website,hours,menu,tastes")
+	params.Set("fields", "fsq_id,name,categories,geocodes,rating,price,tel,website,hours,menu,tastes,location,description,email,verified,popularity")
 
 	req.URL.RawQuery = params.Encode()
 
@@ -150,21 +165,33 @@ func (p *FoursquareProvider) Search(query domain.SearchQuery) ([]domain.POI, err
 		}
 
 		poi := domain.POI{
-			ID:         place.FsqID,
-			Name:       place.Name,
-			Latitude:   place.Geocodes.Main.Latitude,
-			Longitude:  place.Geocodes.Main.Longitude,
-			Category:   category,
-			Source:     p.Name(),
-			Rating:     place.Rating,
-			PriceLevel: place.Price,
-			Phone:      place.Tel,
-			Website:    place.Website,
-			MenuURL:    place.Menu,
+			ID:          place.FsqID,
+			Name:        place.Name,
+			Latitude:    place.Geocodes.Main.Latitude,
+			Longitude:   place.Geocodes.Main.Longitude,
+			Category:    category,
+			Source:      p.Name(),
+			Rating:      place.Rating,
+			PriceLevel:  place.Price,
+			Phone:       place.Tel,
+			Website:     place.Website,
+			MenuURL:     place.Menu,
+			Description: place.Description,
+			Email:       place.Email,
+			Verified:    place.Verified,
+			Popularity:  place.Popularity,
 		}
 
-		if place.Hours != nil && place.Hours.Display != "" {
-			poi.OpeningHours = []string{place.Hours.Display}
+		if place.Location != nil && place.Location.FormattedAddress != "" {
+			poi.Address = place.Location.FormattedAddress
+		}
+
+		if place.Hours != nil {
+			if place.Hours.Display != "" {
+				poi.OpeningHours = []string{place.Hours.Display}
+			}
+			openNow := place.Hours.OpenNow
+			poi.OpenNow = &openNow
 		}
 
 		if len(place.Tastes) > 0 {

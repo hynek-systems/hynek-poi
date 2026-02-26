@@ -43,6 +43,8 @@ type googleResult struct {
 	Rating           float64  `json:"rating"`
 	UserRatingsTotal int      `json:"user_ratings_total"`
 	PriceLevel       int      `json:"price_level"`
+	Vicinity         string   `json:"vicinity"`
+	BusinessStatus   string   `json:"business_status"`
 
 	Geometry struct {
 		Location struct {
@@ -55,6 +57,7 @@ type googleResult struct {
 }
 
 type googleOpeningHours struct {
+	OpenNow     *bool    `json:"open_now"`
 	WeekdayText []string `json:"weekday_text"`
 }
 
@@ -125,10 +128,15 @@ func (p *GoogleProvider) Search(query domain.SearchQuery) ([]domain.POI, error) 
 			Rating:      r.Rating,
 			RatingCount: r.UserRatingsTotal,
 			PriceLevel:  r.PriceLevel,
+			Address:     r.Vicinity,
 		}
 
-		if r.OpeningHours != nil && len(r.OpeningHours.WeekdayText) > 0 {
-			poi.OpeningHours = r.OpeningHours.WeekdayText
+		if r.OpeningHours != nil {
+			poi.OpenNow = r.OpeningHours.OpenNow
+
+			if len(r.OpeningHours.WeekdayText) > 0 {
+				poi.OpeningHours = r.OpeningHours.WeekdayText
+			}
 		}
 
 		pois = append(pois, poi)

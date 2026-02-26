@@ -16,4 +16,15 @@ type POI struct {
 	Cuisine      string   `json:"cuisine,omitempty"`
 	PriceLevel   int      `json:"price_level,omitempty"`
 	MenuURL      string   `json:"menu_url,omitempty"`
+
+	Address              string   `json:"address,omitempty"`
+	Description          string   `json:"description,omitempty"`
+	Email                string   `json:"email,omitempty"`
+	OpenNow              *bool    `json:"open_now,omitempty"`
+	WheelchairAccessible *bool    `json:"wheelchair_accessible,omitempty"`
+	OutdoorSeating       *bool    `json:"outdoor_seating,omitempty"`
+	Takeaway             *bool    `json:"takeaway,omitempty"`
+	Delivery             *bool    `json:"delivery,omitempty"`
+	Verified             *bool    `json:"verified,omitempty"`
+	Popularity           float64  `json:"popularity,omitempty"`
 }
