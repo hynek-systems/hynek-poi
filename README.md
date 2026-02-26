@@ -16,13 +16,15 @@ Hynek POI is designed to be used as:
 
 ## Core Engine
 
-* Multi-provider aggregation (OSM, Google Places, HERE, more coming)
+* Multi-provider aggregation (OSM, Google Places, Foursquare, more coming)
 * Parallel provider execution
 * Deduplication engine (distance-based)
 * Ranking engine (configurable provider priority)
 * Category filtering
 * Radius search
 * Bounding box search
+* Paginated results
+* Rich POI metadata (ratings, hours, contact info, accessibility, and more)
 
 ## Performance
 
@@ -72,7 +74,7 @@ Timeout Provider
   ↓
 Circuit Breaker
   ↓
-Providers (Google, OSM, HERE)
+Providers (Google, OSM, Foursquare)
   ↓
 Deduplication Engine
   ↓
@@ -129,6 +131,23 @@ bbox=minLat,minLng,maxLat,maxLng
 
 ---
 
+## Pagination
+
+Results are paginated by default.
+
+Parameters:
+
+* `page` — Page number (default: 1)
+* `page_size` — Results per page (default: 20, max: 100)
+
+Example:
+
+```
+GET /v1/search?lat=59.3293&lng=18.0686&categories=restaurant&page=2&page_size=10
+```
+
+---
+
 ## Health Check
 
 ```
@@ -157,18 +176,71 @@ Prometheus-compatible.
 
 # Example Response
 
+```json
+{
+  "data": [
+    {
+      "id": "12345",
+      "name": "McDonald's",
+      "latitude": 59.3293,
+      "longitude": 18.0686,
+      "category": "restaurant",
+      "source": "google",
+      "rating": 4.2,
+      "rating_count": 312,
+      "address": "Storgatan 1, Stockholm",
+      "phone": "+46812345678",
+      "website": "https://mcdonalds.se",
+      "opening_hours": ["Mon-Sun 06:00-23:00"],
+      "open_now": true,
+      "price_level": 1,
+      "cuisine": "Fast Food",
+      "wheelchair_accessible": true,
+      "delivery": true,
+      "takeaway": true
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 3
+}
 ```
-[
-  {
-    "id": "12345",
-    "name": "McDonald's",
-    "latitude": 59.3293,
-    "longitude": 18.0686,
-    "category": "restaurant",
-    "source": "google"
-  }
-]
-```
+
+---
+
+# Response Fields
+
+Core fields (always present):
+
+* `id` — Provider-specific place ID
+* `name` — Place name
+* `latitude` / `longitude` — Coordinates
+* `category` — Place category
+* `source` — Provider name (google, osm, foursquare)
+
+Enriched fields (included when available):
+
+* `rating` — Rating score
+* `rating_count` — Number of ratings
+* `address` — Formatted address
+* `phone` — Phone number
+* `email` — Email address
+* `website` — Website URL
+* `menu_url` — Menu URL
+* `opening_hours` — Opening hours
+* `open_now` — Whether the place is currently open
+* `cuisine` — Cuisine type or taste tags
+* `price_level` — Price level (1-4)
+* `description` — Place description
+* `wheelchair_accessible` — Wheelchair accessibility
+* `outdoor_seating` — Outdoor seating available
+* `takeaway` — Takeaway available
+* `delivery` — Delivery available
+* `verified` — Whether the place is verified
+* `popularity` — Popularity score (0-1)
+
+Fields are omitted from the response when not available from the provider.
 
 ---
 
@@ -233,6 +305,13 @@ providers:
     priority: 10
     timeout: 5s
     retries: 1
+
+  foursquare:
+    enabled: true
+    api_key: xxx
+    priority: 5
+    timeout: 3s
+    retries: 2
 ```
 
 ---
@@ -243,8 +322,8 @@ providers:
 | ------------- | --------- |
 | OpenStreetMap | Supported |
 | Google Places | Supported |
+| Foursquare    | Supported |
 | HERE Maps     | Planned   |
-| Foursquare    | Planned   |
 
 ---
 
@@ -325,9 +404,7 @@ process.env.HYNEK_POI_URL
 Upcoming features:
 
 * HERE Maps provider
-* Foursquare provider
 * Adaptive provider scoring
-* Query result pagination
 * Distributed cache support
 * GraphQL endpoint
 * Official SDKs

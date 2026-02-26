@@ -19,3 +19,11 @@ type BBox struct {
 	MaxLat float64
 	MaxLng float64
 }
+
+type PaginatedResponse struct {
+	Data       []POI `json:"data"`
+	Total      int   `json:"total"`
+	Page       int   `json:"page"`
+	PageSize   int   `json:"page_size"`
+	TotalPages int   `json:"total_pages"`
+}

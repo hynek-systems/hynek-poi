@@ -31,9 +31,10 @@ type CacheConfig struct {
 }
 
 type ProvidersConfig struct {
-	OSM    ProviderConfig       `mapstructure:"osm"`
-	Google GoogleProviderConfig `mapstructure:"google"`
-	HERE   ProviderConfig       `mapstructure:"here"`
+	OSM        ProviderConfig       `mapstructure:"osm"`
+	Google     GoogleProviderConfig `mapstructure:"google"`
+	HERE       ProviderConfig       `mapstructure:"here"`
+	Foursquare FoursquareProviderConfig `mapstructure:"foursquare"`
 }
 
 type ProviderConfig struct {
@@ -44,6 +45,14 @@ type ProviderConfig struct {
 }
 
 type GoogleProviderConfig struct {
+	Enabled  bool          `mapstructure:"enabled"`
+	ApiKey   string        `mapstructure:"api_key"`
+	Priority int           `mapstructure:"priority"`
+	Timeout  time.Duration `mapstructure:"timeout"`
+	Retries  int           `mapstructure:"retries"`
+}
+
+type FoursquareProviderConfig struct {
 	Enabled  bool          `mapstructure:"enabled"`
 	ApiKey   string        `mapstructure:"api_key"`
 	Priority int           `mapstructure:"priority"`
@@ -74,6 +83,12 @@ func Load() *Config {
 	viper.SetDefault("providers.google.priority", 1)
 	viper.SetDefault("providers.google.timeout", "2s")
 	viper.SetDefault("providers.google.retries", 2)
+
+	viper.SetDefault("providers.foursquare.enabled", false)
+	viper.SetDefault("providers.foursquare.weight", 10)
+	viper.SetDefault("providers.foursquare.priority", 5)
+	viper.SetDefault("providers.foursquare.timeout", "3s")
+	viper.SetDefault("providers.foursquare.retries", 2)
 
 	viper.SetDefault("cache.ttl", "5m")
 
@@ -116,6 +131,13 @@ func Load() *Config {
 				Priority: viper.GetInt("providers.google.priority"),
 				Timeout:  viper.GetDuration("providers.google.timeout"),
 				Retries:  viper.GetInt("providers.google.retries"),
+			},
+			Foursquare: FoursquareProviderConfig{
+				Enabled:  viper.GetBool("providers.foursquare.enabled"),
+				ApiKey:   viper.GetString("providers.foursquare.api_key"),
+				Priority: viper.GetInt("providers.foursquare.priority"),
+				Timeout:  viper.GetDuration("providers.foursquare.timeout"),
+				Retries:  viper.GetInt("providers.foursquare.retries"),
 			},
 		},
 	}

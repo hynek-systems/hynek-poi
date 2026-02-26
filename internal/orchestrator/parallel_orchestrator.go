@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"errors"
+	"log"
 	"sync"
 	"time"
 
@@ -47,7 +48,13 @@ func (o *ParallelOrchestrator) Search(query domain.SearchQuery) ([]domain.POI, e
 
 			results, err := provider.Search(query)
 
-			if err != nil || len(results) == 0 {
+			if err != nil {
+				log.Printf("provider %s failed: %v", provider.Name(), err)
+				return
+			}
+
+			if len(results) == 0 {
+				log.Printf("provider %s returned 0 results", provider.Name())
 				return
 			}
 

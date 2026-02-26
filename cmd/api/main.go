@@ -75,6 +75,12 @@ func parseBBox(param string) (*domain.BBox, error) {
 	}, nil
 }
 
+const (
+	defaultPage     = 1
+	defaultPageSize = 20
+	maxPageSize     = 100
+)
+
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
@@ -108,6 +114,21 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	page := parseIntParam(r.URL.Query().Get("page"), defaultPage)
+	pageSize := parseIntParam(r.URL.Query().Get("page_size"), defaultPageSize)
+
+	if page < 1 {
+		page = 1
+	}
+
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
+	}
+
 	query := domain.SearchQuery{
 		Latitude:   lat,
 		Longitude:  lng,
@@ -124,10 +145,51 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	total := len(results)
+
+	totalPages := total / pageSize
+	if total%pageSize != 0 {
+		totalPages++
+	}
+
+	start_idx := (page - 1) * pageSize
+	end_idx := start_idx + pageSize
+
+	if start_idx > total {
+		start_idx = total
+	}
+
+	if end_idx > total {
+		end_idx = total
+	}
+
+	paginated := domain.PaginatedResponse{
+		Data:       results[start_idx:end_idx],
+		Total:      total,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(results); err != nil {
+	if err := json.NewEncoder(w).Encode(paginated); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
+}
+
+func parseIntParam(s string, defaultVal int) int {
+
+	if s == "" {
+		return defaultVal
+	}
+
+	v, err := strconv.Atoi(s)
+
+	if err != nil {
+		return defaultVal
+	}
+
+	return v
 }
 
 func main() {

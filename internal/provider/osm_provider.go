@@ -127,15 +127,69 @@ func (p *OSMProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
 
 		category := element.Tags["amenity"]
 
-		pois = append(pois, domain.POI{
+		poi := domain.POI{
 			ID:        fmt.Sprintf("%d", element.ID),
 			Name:      name,
 			Latitude:  element.Lat,
 			Longitude: element.Lon,
 			Category:  category,
 			Source:    p.Name(),
-		})
+			Website:   element.Tags["website"],
+			Phone:     element.Tags["phone"],
+			Cuisine:   element.Tags["cuisine"],
+			Email:     element.Tags["email"],
+			Address:   buildOSMAddress(element.Tags),
+		}
+
+		if hours := element.Tags["opening_hours"]; hours != "" {
+			poi.OpeningHours = []string{hours}
+		}
+
+		if v, ok := element.Tags["wheelchair"]; ok {
+			b := v == "yes"
+			poi.WheelchairAccessible = &b
+		}
+
+		if v, ok := element.Tags["outdoor_seating"]; ok {
+			b := v == "yes"
+			poi.OutdoorSeating = &b
+		}
+
+		if v, ok := element.Tags["takeaway"]; ok {
+			b := v == "yes"
+			poi.Takeaway = &b
+		}
+
+		if v, ok := element.Tags["delivery"]; ok {
+			b := v == "yes"
+			poi.Delivery = &b
+		}
+
+		pois = append(pois, poi)
 	}
 
 	return pois, nil
+}
+
+func buildOSMAddress(tags map[string]string) string {
+
+	var parts []string
+
+	if v := tags["addr:street"]; v != "" {
+		street := v
+		if num := tags["addr:housenumber"]; num != "" {
+			street += " " + num
+		}
+		parts = append(parts, street)
+	}
+
+	if v := tags["addr:postcode"]; v != "" {
+		parts = append(parts, v)
+	}
+
+	if v := tags["addr:city"]; v != "" {
+		parts = append(parts, v)
+	}
+
+	return strings.Join(parts, ", ")
 }
