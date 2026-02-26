@@ -37,9 +37,12 @@ type googleResponse struct {
 }
 
 type googleResult struct {
-	PlaceID string   `json:"place_id"`
-	Name    string   `json:"name"`
-	Types   []string `json:"types"`
+	PlaceID          string   `json:"place_id"`
+	Name             string   `json:"name"`
+	Types            []string `json:"types"`
+	Rating           float64  `json:"rating"`
+	UserRatingsTotal int      `json:"user_ratings_total"`
+	PriceLevel       int      `json:"price_level"`
 
 	Geometry struct {
 		Location struct {
@@ -47,6 +50,12 @@ type googleResult struct {
 			Lng float64 `json:"lng"`
 		} `json:"location"`
 	} `json:"geometry"`
+
+	OpeningHours *googleOpeningHours `json:"opening_hours"`
+}
+
+type googleOpeningHours struct {
+	WeekdayText []string `json:"weekday_text"`
 }
 
 func (p *GoogleProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
@@ -106,20 +115,23 @@ func (p *GoogleProvider) Search(query domain.SearchQuery) ([]domain.POI, error) 
 			category = r.Types[0]
 		}
 
-		pois = append(pois, domain.POI{
+		poi := domain.POI{
+			ID:          r.PlaceID,
+			Name:        r.Name,
+			Latitude:    r.Geometry.Location.Lat,
+			Longitude:   r.Geometry.Location.Lng,
+			Category:    category,
+			Source:      p.Name(),
+			Rating:      r.Rating,
+			RatingCount: r.UserRatingsTotal,
+			PriceLevel:  r.PriceLevel,
+		}
 
-			ID: r.PlaceID,
+		if r.OpeningHours != nil && len(r.OpeningHours.WeekdayText) > 0 {
+			poi.OpeningHours = r.OpeningHours.WeekdayText
+		}
 
-			Name: r.Name,
-
-			Latitude: r.Geometry.Location.Lat,
-
-			Longitude: r.Geometry.Location.Lng,
-
-			Category: category,
-
-			Source: p.Name(),
-		})
+		pois = append(pois, poi)
 	}
 
 	return pois, nil

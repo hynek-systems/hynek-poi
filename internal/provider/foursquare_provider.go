@@ -37,10 +37,28 @@ type foursquareResponse struct {
 }
 
 type foursquarePlace struct {
-	FsqID      string                `json:"fsq_id"`
-	Name       string                `json:"name"`
-	Categories []foursquareCategory  `json:"categories"`
-	Geocodes   foursquareGeocodes    `json:"geocodes"`
+	FsqID      string               `json:"fsq_id"`
+	Name       string               `json:"name"`
+	Categories []foursquareCategory `json:"categories"`
+	Geocodes   foursquareGeocodes   `json:"geocodes"`
+	Rating     float64              `json:"rating"`
+	Price      int                  `json:"price"`
+	Tel        string               `json:"tel"`
+	Website    string               `json:"website"`
+	Menu       string               `json:"menu"`
+	Hours      *foursquareHours     `json:"hours"`
+	Tastes     []string             `json:"tastes"`
+}
+
+type foursquareHours struct {
+	Display string                  `json:"display"`
+	Regular []foursquareHoursEntry  `json:"regular"`
+}
+
+type foursquareHoursEntry struct {
+	Day   int    `json:"day"`
+	Open  string `json:"open"`
+	Close string `json:"close"`
 }
 
 type foursquareCategory struct {
@@ -96,7 +114,7 @@ func (p *FoursquareProvider) Search(query domain.SearchQuery) ([]domain.POI, err
 		}
 	}
 
-	params.Set("fields", "fsq_id,name,categories,geocodes")
+	params.Set("fields", "fsq_id,name,categories,geocodes,rating,price,tel,website,hours,menu,tastes")
 
 	req.URL.RawQuery = params.Encode()
 
@@ -131,20 +149,29 @@ func (p *FoursquareProvider) Search(query domain.SearchQuery) ([]domain.POI, err
 			category = place.Categories[0].Name
 		}
 
-		pois = append(pois, domain.POI{
+		poi := domain.POI{
+			ID:         place.FsqID,
+			Name:       place.Name,
+			Latitude:   place.Geocodes.Main.Latitude,
+			Longitude:  place.Geocodes.Main.Longitude,
+			Category:   category,
+			Source:     p.Name(),
+			Rating:     place.Rating,
+			PriceLevel: place.Price,
+			Phone:      place.Tel,
+			Website:    place.Website,
+			MenuURL:    place.Menu,
+		}
 
-			ID: place.FsqID,
+		if place.Hours != nil && place.Hours.Display != "" {
+			poi.OpeningHours = []string{place.Hours.Display}
+		}
 
-			Name: place.Name,
+		if len(place.Tastes) > 0 {
+			poi.Cuisine = strings.Join(place.Tastes, ", ")
+		}
 
-			Latitude: place.Geocodes.Main.Latitude,
-
-			Longitude: place.Geocodes.Main.Longitude,
-
-			Category: category,
-
-			Source: p.Name(),
-		})
+		pois = append(pois, poi)
 	}
 
 	return pois, nil

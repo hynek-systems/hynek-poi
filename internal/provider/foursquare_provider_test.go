@@ -44,6 +44,15 @@ func TestFoursquareProvider_Search(t *testing.T) {
 							Longitude: 18.0686,
 						},
 					},
+					Rating:  8.5,
+					Price:   2,
+					Tel:     "+46812345678",
+					Website: "https://testrestaurant.se",
+					Menu:    "https://testrestaurant.se/menu",
+					Hours: &foursquareHours{
+						Display: "Mon-Fri 11:00-22:00",
+					},
+					Tastes: []string{"Swedish", "Seafood"},
 				},
 				{
 					FsqID: "def456",
@@ -110,8 +119,45 @@ func TestFoursquareProvider_Search(t *testing.T) {
 		t.Errorf("Expected latitude 59.3293, got %f", results[0].Latitude)
 	}
 
+	if results[0].Rating != 8.5 {
+		t.Errorf("Expected rating 8.5, got %f", results[0].Rating)
+	}
+
+	if results[0].PriceLevel != 2 {
+		t.Errorf("Expected price level 2, got %d", results[0].PriceLevel)
+	}
+
+	if results[0].Phone != "+46812345678" {
+		t.Errorf("Expected phone '+46812345678', got '%s'", results[0].Phone)
+	}
+
+	if results[0].Website != "https://testrestaurant.se" {
+		t.Errorf("Expected website 'https://testrestaurant.se', got '%s'", results[0].Website)
+	}
+
+	if results[0].MenuURL != "https://testrestaurant.se/menu" {
+		t.Errorf("Expected menu URL 'https://testrestaurant.se/menu', got '%s'", results[0].MenuURL)
+	}
+
+	if len(results[0].OpeningHours) != 1 || results[0].OpeningHours[0] != "Mon-Fri 11:00-22:00" {
+		t.Errorf("Expected opening hours ['Mon-Fri 11:00-22:00'], got %v", results[0].OpeningHours)
+	}
+
+	if results[0].Cuisine != "Swedish, Seafood" {
+		t.Errorf("Expected cuisine 'Swedish, Seafood', got '%s'", results[0].Cuisine)
+	}
+
 	if results[1].ID != "def456" {
 		t.Errorf("Expected ID 'def456', got '%s'", results[1].ID)
+	}
+
+	// Second result has no enriched fields
+	if results[1].Rating != 0 {
+		t.Errorf("Expected rating 0, got %f", results[1].Rating)
+	}
+
+	if results[1].Website != "" {
+		t.Errorf("Expected empty website, got '%s'", results[1].Website)
 	}
 }
 

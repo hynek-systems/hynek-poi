@@ -127,14 +127,23 @@ func (p *OSMProvider) Search(query domain.SearchQuery) ([]domain.POI, error) {
 
 		category := element.Tags["amenity"]
 
-		pois = append(pois, domain.POI{
+		poi := domain.POI{
 			ID:        fmt.Sprintf("%d", element.ID),
 			Name:      name,
 			Latitude:  element.Lat,
 			Longitude: element.Lon,
 			Category:  category,
 			Source:    p.Name(),
-		})
+			Website:   element.Tags["website"],
+			Phone:     element.Tags["phone"],
+			Cuisine:   element.Tags["cuisine"],
+		}
+
+		if hours := element.Tags["opening_hours"]; hours != "" {
+			poi.OpeningHours = []string{hours}
+		}
+
+		pois = append(pois, poi)
 	}
 
 	return pois, nil
